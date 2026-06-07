@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fanatic Ressel — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#13132a;--bg2:#1c1c38;--bg3:#242445;--bg4:#2c2c52;
+  --accent:#7B2FBE;--accent2:#9b5de5;--accent3:#c084fc;
+  --green:#00e676;--red:#ff1744;--orange:#ff9100;--cyan:#00e5ff;
+  --text:#f4f4ff;--muted:#7a7aa0;--border:rgba(155,93,229,.25);
+  --sidebar:240px;
+}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden}
+
+/* Noise texture overlay */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:.4;pointer-events:none;z-index:0}
+
+/* Glow */
+.glow-orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.orb1{width:500px;height:500px;background:rgba(123,47,190,.12);top:-100px;left:200px}
+.orb2{width:400px;height:400px;background:rgba(0,229,255,.06);bottom:-50px;right:100px}
+
+/* Sidebar */
+.sidebar{
+  width:var(--sidebar);background:linear-gradient(180deg,#1e1e38 0%,#16162e 100%);
+  border-right:1px solid var(--border);position:fixed;height:100vh;
+  display:flex;flex-direction:column;z-index:100;
+  padding:0 0 20px;overflow:hidden;
+}
+.sidebar::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent2),transparent)}
+
+.logo-area{padding:28px 24px 24px;border-bottom:1px solid var(--border)}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent3));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px;box-shadow:0 4px 20px rgba(123,47,190,.4)}
+.logo-name{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+.logo-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+
+.nav-section{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:2px;padding:20px 24px 8px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 24px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all .2s;position:relative;margin:2px 0}
+.nav-item .nav-icon{font-size:16px;width:20px;text-align:center}
+.nav-item:hover{color:var(--text);background:rgba(155,93,229,.08)}
+.nav-item.active{color:var(--accent3);background:rgba(155,93,229,.12)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:linear-gradient(var(--accent2),var(--accent3));border-radius:0 3px 3px 0}
+
+.nav-bottom{margin-top:auto;padding:0 12px}
+.nav-logout{display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--muted);text-decoration:none;font-size:12px;font-weight:600;border-radius:8px;transition:.2s}
+.nav-logout:hover{color:var(--red);background:rgba(255,23,68,.08)}
+
+/* Main */
+.main{margin-left:var(--sidebar);flex:1;padding:28px 32px;position:relative;z-index:1}
+
+/* Header */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.page-title{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.page-title span{color:var(--accent3)}
+.header-badge{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--muted)}
+.header-badge .dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 8px var(--green)}
+
+/* Cards */
+.card{background:#1e1e3c;border:1px solid rgba(155,93,229,.22);border-radius:16px;padding:22px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(155,93,229,.3),transparent)}
+.card-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.card-title{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:16px;letter-spacing:.3px}
+
+/* Stat cards */
+.stat-val{font-size:32px;font-weight:800;letter-spacing:-1px;font-family:'JetBrains Mono',monospace}
+.stat-label{font-size:11px;color:var(--muted);margin-top:4px;font-weight:600}
+.stat-icon{position:absolute;right:20px;top:20px;font-size:28px;opacity:.15}
+
+/* Grid */
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+/* Inputs */
+label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+input,textarea,select{
+  width:100%;background:#252548;border:1px solid rgba(155,93,229,.25);
+  border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;
+  outline:none;margin-bottom:14px;font-family:'Space Grotesk',sans-serif;
+  transition:all .2s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent2);background:#2e2e58;box-shadow:0 0 0 3px rgba(155,93,229,.12)}
+textarea{resize:vertical;min-height:80px}
+select option{background:var(--bg3)}
+
+/* Buttons */
+.btn{padding:11px 22px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Space Grotesk',sans-serif;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 20px rgba(123,47,190,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(123,47,190,.45)}
+.btn-success{background:linear-gradient(135deg,#00897b,var(--green));color:#000}
+.btn-danger{background:rgba(255,23,68,.15);color:var(--red);border:1px solid rgba(255,23,68,.25)}
+.btn-danger:hover{background:rgba(255,23,68,.25)}
+.btn-orange{background:linear-gradient(135deg,#e65100,var(--orange));color:#000}
+.btn-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:rgba(155,93,229,.3)}
+.btn-full{width:100%;justify-content:center;padding:13px}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.b-green{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2)}
+.b-red{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2)}
+.b-orange{background:rgba(255,145,0,.1);color:var(--orange);border:1px solid rgba(255,145,0,.2)}
+.b-purple{background:rgba(155,93,229,.1);color:var(--accent3);border:1px solid rgba(155,93,229,.2)}
+.b-cyan{background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.2)}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* Log */
+.log-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.log-row:last-child{border:none}
+.log-time{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;flex-shrink:0;width:100px}
+.log-desc{color:#aaa;flex:1}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transform:translateY(16px) scale(.97);transition:.3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;display:flex;align-items:center;gap:10px}
+.toast.show{opacity:1;transform:translateY(0) scale(1)}
+.toast.success{border-color:rgba(0,230,118,.3);color:var(--green)}
+.toast.error{border-color:rgba(255,23,68,.3);color:var(--red)}
+
+/* Quick action buttons */
+.action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;background:#252548;border:1px solid rgba(155,93,229,.25);border-radius:12px;cursor:pointer;text-decoration:none;color:var(--muted);transition:all .2s;font-size:12px;font-weight:600}
+.action-btn:hover{border-color:rgba(155,93,229,.5);color:var(--text);background:#2e2e58;transform:translateY(-2px)}
+.action-btn .icon{font-size:24px}
+
+/* Table */
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;padding:0 12px 12px;text-align:left}
+td{padding:12px;font-size:13px;border-top:1px solid rgba(255,255,255,.04)}
+tr:hover td{background:rgba(155,93,229,.04)}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0}
+  .g4,.g3,.g2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="glow-orb orb1"></div>
+<div class="glow-orb orb2"></div>
+
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-icon">🔥</div>
+    <div class="logo-name">Fanatic Ressel</div>
+    <div class="logo-sub">admin.dashboard</div>
+  </div>
+
+  <div class="nav-section">Menu</div>
+  <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+    <span class="nav-icon">◈</span> Dashboard
+  </a>
+  <a href="/catalogue" class="nav-item {% if request.path == '/catalogue' %}active{% endif %}">
+    <span class="nav-icon">📦</span> Catalogue
+  </a>
+  <a href="/drops" class="nav-item {% if request.path == '/drops' %}active{% endif %}">
+    <span class="nav-icon">📢</span> Drops & Restocks
+  </a>
+  <a href="/annonces" class="nav-item {% if request.path == '/annonces' %}active{% endif %}">
+    <span class="nav-icon">📣</span> Annonces
+  </a>
+
+  <div class="nav-section">Serveur</div>
+  <a href="/membres" class="nav-item {% if request.path == '/membres' %}active{% endif %}">
+    <span class="nav-icon">👥</span> Membres
+  </a>
+
+  <div class="nav-bottom">
+    <a href="/logout" class="nav-logout">
+      <span>⬡</span> Déconnexion
+    </a>
+  </div>
+</aside>
+
+<main class="main">
+  {% block content %}{% endblock %}
+</main>
+
+<div class="toast" id="toast"></div>
+<script>
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show '+type;
+  setTimeout(()=>t.className='toast',3000);
+}
+async function post(url,data){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  return await r.json();
+}
+</script>
+</body>
+</html>

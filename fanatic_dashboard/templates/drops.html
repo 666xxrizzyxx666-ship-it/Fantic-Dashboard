@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Drops <span>& Restocks</span></div>
+</div>
+
+<div class="grid g2">
+  <!-- Restock -->
+  <div class="card">
+    <div class="card-title">🔔 ANNONCER UN RESTOCK</div>
+    <label>Produit du catalogue *</label>
+    <select id="r-produit-select" onchange="fillRestock()">
+      <option value="">— Sélectionne un produit —</option>
+      {% for p in produits %}
+      <option value="{{ p.id }}" data-nom="{{ p.nom }}" data-prix="{{ p.prix }}">
+        {{ {'sneakers':'👟','vetements':'👔','parfums':'🧴','tech':'📱','accessoires':'👜'}.get(p.categorie,'📦') }}
+        {{ p.nom }} — {{ p.prix }}
+      </option>
+      {% endfor %}
+    </select>
+    <label>Nom du produit</label>
+    <input type="text" id="r-nom" placeholder="Rempli automatiquement">
+    <div class="grid g2">
+      <div>
+        <label>Quantité restockée *</label>
+        <input type="text" id="r-qty" placeholder="Ex: 5 paires, 3 unités...">
+      </div>
+      <div>
+        <label>Prix</label>
+        <input type="text" id="r-prix" placeholder="Rempli automatiquement">
+      </div>
+    </div>
+    <button class="btn btn-success btn-full" onclick="postRestock()">🔔 Annoncer le restock</button>
+  </div>
+
+  <!-- Drop -->
+  <div class="card">
+    <div class="card-title">📢 DROP À VENIR</div>
+    <label>Titre *</label>
+    <input type="text" id="d-titre" placeholder="Ex: Nike Air Jordan 4 Violet">
+    <label>Date *</label>
+    <input type="text" id="d-date" placeholder="Ex: Samedi 15 juin à 20h">
+    <label>Description</label>
+    <textarea id="d-desc" placeholder="Infos sur le drop, prix prévu, quantité..."></textarea>
+    <label>URL Image</label>
+    <input type="url" id="d-img" placeholder="https://i.imgur.com/...">
+    <button class="btn btn-primary btn-full" onclick="postDrop()">📢 Annoncer le drop</button>
+  </div>
+</div>
+
+<script>
+const produits = {{ produits_json|safe }};
+
+function fillRestock(){
+  const sel = document.getElementById('r-produit-select');
+  const opt = sel.options[sel.selectedIndex];
+  if(opt.value){
+    document.getElementById('r-nom').value = opt.dataset.nom || '';
+    document.getElementById('r-prix').value = opt.dataset.prix || '';
+  }
+}
+
+async function postRestock(){
+  const data = {
+    produit: document.getElementById('r-nom').value,
+    quantite: document.getElementById('r-qty').value,
+    prix: document.getElementById('r-prix').value,
+  };
+  if(!data.produit||!data.quantite){showToast('Remplis les champs obligatoires','error');return}
+  const r = await post('/api/restock', data);
+  showToast(r.success?'✅ Restock annoncé !':'❌ Erreur', r.success?'success':'error');
+}
+
+async function postDrop(){
+  const data = {
+    titre: document.getElementById('d-titre').value,
+    date: document.getElementById('d-date').value,
+    description: document.getElementById('d-desc').value,
+    image: document.getElementById('d-img').value,
+  };
+  if(!data.titre||!data.date){showToast('Remplis les champs obligatoires','error');return}
+  const r = await post('/api/drop', data);
+  showToast(r.success?'✅ Drop annoncé !':'❌ Erreur', r.success?'success':'error');
+}
+</script>
+{% endblock %}
