@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Dashboard <span>Fanatic</span></div>
+  </div>
+  <div class="header-badge">
+    <div class="dot"></div>
+    Bots en ligne
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid g4" style="margin-bottom:20px">
+  <div class="card">
+    <div class="stat-icon">👥</div>
+    <div class="card-label">Membres</div>
+    <div class="stat-val" style="color:#c084fc">{{ guild.get('approximate_member_count','—') }}</div>
+    <div class="stat-label">Sur le serveur</div>
+  </div>
+  <div class="card">
+    <div class="stat-icon">🔥</div>
+    <div class="card-label">Statut</div>
+    <div class="stat-val" style="color:#00e676;font-size:22px;margin-top:6px">En ligne</div>
+    <div class="stat-label">3 bots actifs</div>
+  </div>
+  <div class="card">
+    <div class="stat-icon">⚡</div>
+    <div class="card-label">Boosts</div>
+    <div class="stat-val" style="color:#ff9100">{{ guild.get('premium_subscription_count',0) }}</div>
+    <div class="stat-label">Niveau {{ guild.get('premium_tier',0) }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-icon">📋</div>
+    <div class="card-label">Actions</div>
+    <div class="stat-val" style="color:#00e5ff">{{ logs|length }}</div>
+    <div class="stat-label">Ce mois</div>
+  </div>
+</div>
+
+<div class="grid g2">
+  <!-- Actions rapides -->
+  <div class="card">
+    <div class="card-title">⚡ ACTIONS RAPIDES</div>
+    <div class="grid g2" style="margin-bottom:16px">
+      <a href="/catalogue" class="action-btn">
+        <span class="icon">🛍️</span>
+        Nouveau deal
+      </a>
+      <a href="/drops" class="action-btn">
+        <span class="icon">🔔</span>
+        Restock
+      </a>
+      <a href="/drops" class="action-btn">
+        <span class="icon">💰</span>
+        Promo
+      </a>
+      <a href="/annonces" class="action-btn">
+        <span class="icon">📣</span>
+        Annonce
+      </a>
+    </div>
+    <div class="divider"></div>
+    <div class="card-title">📊 STOCK RAPIDE</div>
+    <textarea id="stock-msg" placeholder="Ex: Nike Air Jordan 4 — 3 paires dispo..."></textarea>
+    <button class="btn btn-primary btn-full" onclick="postStock()">
+      Mettre à jour le stock
+    </button>
+  </div>
+
+  <!-- Logs -->
+  <div class="card">
+    <div class="card-title">📋 ACTIVITÉ RÉCENTE</div>
+    {% if logs %}
+      {% for log in logs[:12] %}
+      <div class="log-row">
+        <span class="log-time">{{ log.date[-5:] }}</span>
+        <span class="badge b-purple">{{ log.action }}</span>
+        <span class="log-desc">{{ log.details[:40] }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:#4a4a6a;font-size:13px;text-align:center;padding:24px 0">Aucune activité pour l'instant</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+async function postStock(){
+  const msg=document.getElementById('stock-msg').value;
+  if(!msg){showToast('Écris un message','error');return}
+  const r=await post('/api/stock',{message:msg});
+  showToast(r.success?'✅ Stock mis à jour !':'❌ Erreur',r.success?'success':'error');
+  if(r.success)document.getElementById('stock-msg').value='';
+}
+</script>
+{% endblock %}

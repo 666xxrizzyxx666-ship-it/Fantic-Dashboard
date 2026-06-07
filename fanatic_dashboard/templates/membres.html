@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Membres <span>({{ members|length }})</span></div>
+</div>
+<div class="card">
+  <div class="card-title">👥 LISTE DES MEMBRES</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Membre</th>
+        <th>ID</th>
+        <th>Rejoint le</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in members %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            {% if m.user.avatar %}
+            <img src="https://cdn.discordapp.com/avatars/{{ m.user.id }}/{{ m.user.avatar }}.png"
+                 style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(155,93,229,.3)">
+            {% else %}
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>
+            {% endif %}
+            <span style="font-weight:600">{{ m.user.username }}</span>
+            {% if m.user.bot %}<span class="badge b-purple">BOT</span>{% endif %}
+          </div>
+        </td>
+        <td style="color:#4a4a6a;font-family:'JetBrains Mono',monospace;font-size:11px">{{ m.user.id }}</td>
+        <td style="color:#4a4a6a;font-size:12px">{{ m.joined_at[:10] if m.joined_at else '—' }}</td>
+        <td>
+          {% if not m.user.bot %}
+          <button class="btn btn-ghost" style="padding:6px 14px;font-size:11px;margin-right:6px"
+                  onclick="kickMember('{{ m.user.id }}','{{ m.user.username }}')">Kick</button>
+          <button class="btn btn-danger" style="padding:6px 14px;font-size:11px"
+                  onclick="banMember('{{ m.user.id }}','{{ m.user.username }}')">Ban</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<script>
+async function kickMember(id,name){
+  if(!confirm('Kick '+name+' ?'))return;
+  const r=await post('/api/kick/'+id,{raison:'Dashboard'});
+  showToast(r.success?'✅ '+name+' kick !':'❌ Erreur',r.success?'success':'error');
+  if(r.success)setTimeout(()=>location.reload(),1500);
+}
+async function banMember(id,name){
+  if(!confirm('Ban '+name+' ?'))return;
+  const r=await post('/api/ban/'+id,{raison:'Dashboard'});
+  showToast(r.success?'🔨 '+name+' banni !':'❌ Erreur',r.success?'success':'error');
+  if(r.success)setTimeout(()=>location.reload(),1500);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Annonces <span>officielles</span></div>
+</div>
+<div class="grid g2">
+  <div class="card">
+    <div class="card-title">📣 NOUVELLE ANNONCE</div>
+    <label>Titre</label>
+    <input type="text" id="a-titre" placeholder="Titre de l'annonce">
+    <label>Message</label>
+    <textarea id="a-msg" placeholder="Contenu de l'annonce..." style="min-height:140px"></textarea>
+    <label>URL Image (optionnel)</label>
+    <input type="url" id="a-img" placeholder="https://i.imgur.com/...">
+    <button class="btn btn-primary btn-full" onclick="postAnnonce()">📣 Publier l'annonce</button>
+  </div>
+  <div class="card">
+    <div class="card-title">ℹ️ AIDE</div>
+    <p style="color:#6a6a8a;font-size:13px;line-height:2">
+      Les annonces sont postées dans <strong style="color:#c084fc">📣 ANNONCES</strong>.<br>
+      Elles apparaissent en embed violet avec ton titre et message.<br>
+      Ajoute une image pour la rendre plus visuelle.<br><br>
+      <strong style="color:#c084fc">Conseils :</strong><br>
+      • Sois clair et direct<br>
+      • Mets les infos importantes en gras avec **texte**<br>
+      • Ajoute une image Fanatic Ressel pour le style
+    </p>
+  </div>
+</div>
+<script>
+async function postAnnonce(){
+  const data={titre:document.getElementById('a-titre').value,message:document.getElementById('a-msg').value,image:document.getElementById('a-img').value};
+  if(!data.titre||!data.message){showToast('Remplis les champs','error');return}
+  const r=await post('/api/annonce',data);
+  showToast(r.success?'✅ Annonce publiée !':'❌ Erreur',r.success?'success':'error');
+  if(r.success){document.getElementById('a-titre').value='';document.getElementById('a-msg').value='';}
+}
+</script>
+{% endblock %}
