@@ -263,19 +263,6 @@ def api_annonce():
     embed = {"title":f"📣 {data['titre']}","description":data["message"],
              "color":0x7B2FBE,"footer":{"text":"Fanatic Ressel • Annonce officielle"},
              "timestamp":datetime.utcnow().isoformat()}
-    if data.get("image"):
-        embed["image"] = {"url": data["image"]}
-    ok = run(discord_post(CHANNELS["annonces"], embed))
-    if ok: save_log("Annonce postée", data["titre"])
-    return jsonify({"success": ok})
-
-@app.route("/api/annonce", methods=["POST"])
-@auth
-def api_annonce():
-    data = request.json
-    embed = {"title":f"📣 {data['titre']}","description":data["message"],
-             "color":0x7B2FBE,"footer":{"text":"Fanatic Ressel • Annonce officielle"},
-             "timestamp":datetime.utcnow().isoformat()}
     if data.get("image"): embed["image"] = {"url": data["image"]}
     ok = run(webhook_send("annonces", embed))
     if ok: save_log("Annonce postée", data["titre"])
