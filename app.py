@@ -7,11 +7,25 @@ from datetime import datetime
 from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = "fanatic_ressel_secret_2024"
+app.secret_key = os.environ.get("SECRET_KEY", "fanatic_ressel_secret_2024")
 
-BOT_TOKEN = "MTUxMzEyNDUxNDMyMDQ4MjMyNA.GGqeaO.WHBsZwBg1ugfIRAX-qPl2nd7E4VZ8PlwTTp-c0"
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 GUILD_ID = 1513108386722480211
-PASSWORD = "fanatic2024"
+PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "fanatic2024")
+
+WEBHOOKS = {
+    "nouveautes":      os.environ.get("WH_NOUVEAUTES",   "https://discord.com/api/webhooks/1513190518413070417/8fh-HLHfzpQKrrfIi_tf3SErMbTmwwDt5T2BP35w9SP1XR92CASrTiQs36kSUViLYV69"),
+    "sneakers":        os.environ.get("WH_SNEAKERS",     "https://discord.com/api/webhooks/1513190674768597092/5SDLmctbSBLN2wAFi2CFiL2aogiIfkmEAMy65vxBylGHqVFP991HwSe6ogmtDYVW0Snr"),
+    "vetements":       os.environ.get("WH_VETEMENTS",    "https://discord.com/api/webhooks/1513190765944111230/Op_r6PS95s3x6f0Nm2Y67OcfsHagNzwACU5mxxQl2mXFgZEUPxmbmx3NTiLIX4urB4Y7"),
+    "parfums":         os.environ.get("WH_PARFUMS",      "https://discord.com/api/webhooks/1513190863105167410/6a74VgRT0tijelIJmL4YpwGyCTeBUPkxmWhTEMz8V7aKrcOOFWXzybpY7qivWLVWWc2L"),
+    "tech":            os.environ.get("WH_TECH",         "https://discord.com/api/webhooks/1513190940200927335/rXQCilAF1P3sfYOpAwMQKDhG2tPfPeYFB5chA-sr21FlfVS9l-qEXTgpp93TWMm0nfz6"),
+    "accessoires":     os.environ.get("WH_ACCESSOIRES",  "https://discord.com/api/webhooks/1513191027211636926/Cs_Q7uhF-eoxPv8CxWXwfJyJE2bOm8pkd9-x-ym-kVjCP7038F5CfXiSCNJO9BJ4_ZSA"),
+    "prix_du_moment":  os.environ.get("WH_PRIX",         "https://discord.com/api/webhooks/1513191113974874202/uGxLoFM2nMFhBpKbWGYZI5jqOwBb9QWBJFUzCXjxZuIZMiio-czaa1D3fBsdsX8ZQqD0"),
+    "drops_a_venir":   os.environ.get("WH_DROPS",        "https://discord.com/api/webhooks/1513191196548137060/SqyyaiIDoovNrM74AAwW6oe3HZI5hl1n7ikXbiM54cpP8DZR6vZM9EdYMXBo6LMzbDzO"),
+    "alertes_restocks":os.environ.get("WH_RESTOCKS",     "https://discord.com/api/webhooks/1513191298075590696/J6ATqLExI3GDoMPZVb4KS1yyBvKFh0V-pDzdZk9Z-OAq7hbNsQHbk_jvxyf0VQm6wQSd"),
+    "stock_disponible":os.environ.get("WH_STOCK",        "https://discord.com/api/webhooks/1513191399678542045/CCZv1s3EDXzQrJCse109g-4PJWSoq4Y8ZAVJXjAj3ADtfR1IkCUHiRO5zzxZtqectOGR"),
+    "annonces":        os.environ.get("WH_ANNONCES",     "https://discord.com/api/webhooks/1513191478057238638/TSvrF1PgVmdOzOVbO7KvbcEjyL3UedXsNWvBM8VBOoDKXlhLqOph2VVebhE3g9fJJp6b"),
+}
 
 CHANNELS = {
     "sneakers":    1513111096439865374,
@@ -54,65 +68,22 @@ def save_log(action, details):
     with open(LOGS_FILE, "w") as f:
         json.dump(logs[:50], f, indent=2)
 
-# ─── Discord API ───────────────────────────────────────────
-async def discord_post(channel_id, embed, mention_everyone=False):
+# ─── Webhook helpers ───────────────────────────────────────
+async def webhook_send(webhook_key, embed, mention_everyone=False):
+    url = WEBHOOKS.get(webhook_key)
+    if not url:
+        return False
     async with aiohttp.ClientSession() as s:
-        headers = {"Authorization": f"Bot {BOT_TOKEN}", "Content-Type": "application/json"}
         payload = {"embeds": [embed]}
         if mention_everyone:
             payload["content"] = "@everyone"
-        async with s.post(
-            f"https://discord.com/api/v10/channels/{channel_id}/messages",
-            headers=headers, json=payload) as r:
-            return r.status == 200
+        async with s.post(url, json=payload) as r:
+            return r.status in [200, 204]
 
-async def discord_edit(channel_id, message_id, embed):
+async def webhook_send_url(url, embed):
     async with aiohttp.ClientSession() as s:
-        headers = {"Authorization": f"Bot {BOT_TOKEN}", "Content-Type": "application/json"}
-        async with s.patch(
-            f"https://discord.com/api/v10/channels/{channel_id}/messages/{message_id}",
-            headers=headers, json={"embeds": [embed]}) as r:
-            return r.status == 200
-
-async def discord_delete(channel_id, message_id):
-    async with aiohttp.ClientSession() as s:
-        headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-        async with s.delete(
-            f"https://discord.com/api/v10/channels/{channel_id}/messages/{message_id}",
-            headers=headers) as r:
-            return r.status == 204
-
-async def get_guild_info():
-    async with aiohttp.ClientSession() as s:
-        headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-        async with s.get(
-            f"https://discord.com/api/v10/guilds/{GUILD_ID}?with_counts=true",
-            headers=headers) as r:
-            return await r.json() if r.status == 200 else {}
-
-async def get_members():
-    async with aiohttp.ClientSession() as s:
-        headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-        async with s.get(
-            f"https://discord.com/api/v10/guilds/{GUILD_ID}/members?limit=100",
-            headers=headers) as r:
-            return await r.json() if r.status == 200 else []
-
-async def kick_member(uid, reason):
-    async with aiohttp.ClientSession() as s:
-        headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-        async with s.delete(
-            f"https://discord.com/api/v10/guilds/{GUILD_ID}/members/{uid}",
-            headers=headers, params={"reason": reason}) as r:
-            return r.status == 204
-
-async def ban_member(uid, reason):
-    async with aiohttp.ClientSession() as s:
-        headers = {"Authorization": f"Bot {BOT_TOKEN}", "Content-Type": "application/json"}
-        async with s.put(
-            f"https://discord.com/api/v10/guilds/{GUILD_ID}/bans/{uid}",
-            headers=headers, json={"reason": reason}) as r:
-            return r.status == 200
+        async with s.post(url, json={"embeds": [embed]}) as r:
+            return r.status in [200, 204]
 
 def run(coro):
     loop = asyncio.new_event_loop()
@@ -174,11 +145,11 @@ def logout():
 @app.route("/")
 @auth
 def dashboard():
-    guild = run(get_guild_info())
     logs  = load_logs()
     cat   = load_catalogue()
     dispo = sum(1 for p in cat if p.get("statut") == "disponible")
     vendu = sum(1 for p in cat if p.get("statut") == "vendu")
+    guild = {"approximate_member_count": "—", "premium_subscription_count": 0, "premium_tier": 0}
     return render_template("dashboard.html", guild=guild, logs=logs,
                            total=len(cat), dispo=dispo, vendu=vendu)
 
@@ -211,8 +182,7 @@ def annonces():
 @app.route("/membres")
 @auth
 def membres():
-    members = run(get_members())
-    return render_template("membres.html", members=members)
+    return render_template("membres.html", members=[])
 
 # ─── API Catalogue ─────────────────────────────────────────
 @app.route("/api/produit", methods=["POST"])
@@ -231,29 +201,11 @@ def api_add_produit():
         "lien": data.get("lien",""),
         "statut": "disponible",
         "date": datetime.now().strftime("%d/%m/%Y"),
-        "discord_message_id": None,
-        "discord_channel_id": None,
     }
     embed = build_product_embed(produit)
-    channel_id = CHANNELS.get(produit["categorie"])
-    if channel_id:
-        # On envoie dans Discord via aiohttp directement
-        async def send_and_get_id():
-            async with aiohttp.ClientSession() as s:
-                headers = {"Authorization": f"Bot {BOT_TOKEN}", "Content-Type": "application/json"}
-                async with s.post(
-                    f"https://discord.com/api/v10/channels/{channel_id}/messages",
-                    headers=headers, json={"embeds": [embed]}) as r:
-                    if r.status == 200:
-                        msg = await r.json()
-                        return msg.get("id")
-            return None
-        msg_id = run(send_and_get_id())
-        produit["discord_message_id"] = msg_id
-        produit["discord_channel_id"] = channel_id
-        # Aussi dans nouveautés
-        run(discord_post(CHANNELS["nouveautes"], embed))
-
+    wh_key = produit["categorie"]
+    run(webhook_send(wh_key, embed))
+    run(webhook_send("nouveautes", embed))
     cat.append(produit)
     save_catalogue(cat)
     save_log("Produit ajouté", f"{produit['nom']} — {produit['prix']}")
@@ -277,9 +229,6 @@ def api_update_produit(pid):
     if not p:
         return jsonify({"success": False})
     p.update({k: data[k] for k in ["nom","prix","categorie","description","image","lien","statut"] if k in data})
-    embed = build_product_embed(p)
-    if p.get("discord_message_id") and p.get("discord_channel_id"):
-        run(discord_edit(p["discord_channel_id"], p["discord_message_id"], embed))
     save_catalogue(cat)
     save_log("Produit modifié", f"{p['nom']} → {p.get('statut','')}")
     return jsonify({"success": True})
@@ -291,8 +240,6 @@ def api_delete_produit(pid):
     p = next((x for x in cat if x["id"] == pid), None)
     if not p:
         return jsonify({"success": False})
-    if p.get("discord_message_id") and p.get("discord_channel_id"):
-        run(discord_delete(p["discord_channel_id"], p["discord_message_id"]))
     cat = [x for x in cat if x["id"] != pid]
     save_catalogue(cat)
     save_log("Produit supprimé", p["nom"])
@@ -305,7 +252,7 @@ def api_stock():
     embed = {"title":"📊 STOCK DISPONIBLE","description":data["message"],
              "color":0x7B2FBE,"footer":{"text":"Fanatic Ressel • Mis à jour"},
              "timestamp":datetime.utcnow().isoformat()}
-    ok = run(discord_post(CHANNELS["stock_disponible"], embed))
+    ok = run(webhook_send("stock_disponible", embed))
     if ok: save_log("Stock mis à jour", data["message"][:50])
     return jsonify({"success": ok})
 
@@ -322,6 +269,18 @@ def api_annonce():
     if ok: save_log("Annonce postée", data["titre"])
     return jsonify({"success": ok})
 
+@app.route("/api/annonce", methods=["POST"])
+@auth
+def api_annonce():
+    data = request.json
+    embed = {"title":f"📣 {data['titre']}","description":data["message"],
+             "color":0x7B2FBE,"footer":{"text":"Fanatic Ressel • Annonce officielle"},
+             "timestamp":datetime.utcnow().isoformat()}
+    if data.get("image"): embed["image"] = {"url": data["image"]}
+    ok = run(webhook_send("annonces", embed))
+    if ok: save_log("Annonce postée", data["titre"])
+    return jsonify({"success": ok})
+
 @app.route("/api/drop", methods=["POST"])
 @auth
 def api_drop():
@@ -332,7 +291,7 @@ def api_drop():
              "footer":{"text":"Fanatic Ressel • Restez connectés 🔥"},
              "timestamp":datetime.utcnow().isoformat()}
     if data.get("image"): embed["image"] = {"url": data["image"]}
-    ok = run(discord_post(CHANNELS["drops_a_venir"], embed, mention_everyone=True))
+    ok = run(webhook_send("drops_a_venir", embed, mention_everyone=True))
     if ok: save_log("Drop annoncé", f"{data['titre']} — {data['date']}")
     return jsonify({"success": ok})
 
@@ -347,25 +306,21 @@ def api_restock():
                        {"name":"💰 Prix","value":data["prix"],"inline":True}],
              "footer":{"text":"Fanatic Ressel • Vite avant rupture !"},
              "timestamp":datetime.utcnow().isoformat()}
-    ok = run(discord_post(CHANNELS["alertes_restocks"], embed, mention_everyone=True))
+    ok = run(webhook_send("alertes_restocks", embed, mention_everyone=True))
     if ok: save_log("Restock annoncé", f"{data['produit']}")
     return jsonify({"success": ok})
 
 @app.route("/api/kick/<uid>", methods=["POST"])
 @auth
 def api_kick(uid):
-    data = request.json
-    ok = run(kick_member(uid, data.get("raison","Dashboard")))
-    if ok: save_log("Kick", f"User {uid}")
-    return jsonify({"success": ok})
+    save_log("Kick tenté", f"User {uid} — utilise le bot Staff")
+    return jsonify({"success": False, "message": "Utilise le bot Staff pour kick"})
 
 @app.route("/api/ban/<uid>", methods=["POST"])
 @auth
 def api_ban(uid):
-    data = request.json
-    ok = run(ban_member(uid, data.get("raison","Dashboard")))
-    if ok: save_log("Ban", f"User {uid}")
-    return jsonify({"success": ok})
+    save_log("Ban tenté", f"User {uid} — utilise le bot Staff")
+    return jsonify({"success": False, "message": "Utilise le bot Staff pour ban"})
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=5000)
